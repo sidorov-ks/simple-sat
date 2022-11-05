@@ -1,29 +1,27 @@
 use std::fs;
 use std::fs::read_to_string;
-use std::path::Path;
 
 use anyhow::{anyhow, bail, Context};
+use clap::Parser;
 use dimacs::Instance;
 use log::{error, info, warn};
 
+use crate::args::Args;
 use crate::solver::engines::brute_force::BruteForceSolver;
 use crate::solver::SatSolver;
 
+mod args;
 mod solver;
 
 fn main() {
     let start = std::time::Instant::now();
+    let args = Args::parse();
     init_logging();
-    let instance = std::env::args().nth(1);
-    let output = std::env::args().nth(2);
-    if let (Some(input_file_path), Some(output_file_path)) = (instance, output) {
-        if let Err(err) = run(Path::new(&input_file_path), Path::new(&output_file_path)) {
-            error!("Solver has encountered a fatal error, details: {}", err)
-        }
-        info!("Shutting down after {} seconds", start.elapsed().as_secs());
-    } else {
-        eprintln!("Usage: simple-sat <instance> <output>")
+    info!("Launch configuration {:?}", args);
+    if let Err(err) = run(args) {
+        error!("Solver has encountered a fatal error, details: {}", err)
     }
+    info!("Shutting down after {} seconds", start.elapsed().as_secs());
 }
 
 fn init_logging() {
@@ -32,11 +30,11 @@ fn init_logging() {
 
 const FILENAME_PLACEHOLDER: &str = "<unknown>";
 
-fn run(input_file: &Path, output_file: &Path) -> anyhow::Result<()> {
-    let mut solver = BruteForceSolver::new();
-    let file_path = input_file.to_str().unwrap_or(FILENAME_PLACEHOLDER);
-    let instance_text =
-        read_to_string(input_file).context(format!("Failed to read the instance {}", file_path))?;
+fn run(args: Args) -> anyhow::Result<()> {
+    let mut solver = args.make_solver();
+    let file_path = args.input_file.to_str().unwrap_or(FILENAME_PLACEHOLDER);
+    let instance_text = read_to_string(&args.input_file)
+        .context(format!("Failed to read the instance {}", file_path))?;
     match dimacs::parse_dimacs(&instance_text)
         .map_err(|err| anyhow!("Loc {:?}, error kind: {:?}", err.loc, err.kind))
         .context(format!("Failed to parse the instance {}", file_path))?
@@ -49,10 +47,10 @@ fn run(input_file: &Path, output_file: &Path) -> anyhow::Result<()> {
                 clauses.len()
             );
             let solution = solver.solve(num_vars, &clauses.into_vec());
-            if fs::write(output_file, format!("{}", solution)).is_err() {
+            if fs::write(&args.output_file, format!("{}", solution)).is_err() {
                 warn!(
                     "Failed to write the solution into the file {}, writing to stdout",
-                    output_file.to_str().unwrap_or(FILENAME_PLACEHOLDER)
+                    args.output_file.to_str().unwrap_or(FILENAME_PLACEHOLDER)
                 );
                 println!("{}", solution)
             }
