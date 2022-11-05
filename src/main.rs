@@ -9,6 +9,7 @@ use dimacs::Instance;
 use log::{error, info, warn};
 
 fn main() {
+    let start = std::time::Instant::now();
     init_logging();
     let instance = std::env::args().nth(1);
     let output = std::env::args().nth(2);
@@ -16,7 +17,7 @@ fn main() {
         if let Err(err) = run(Path::new(&input_file_path), Path::new(&output_file_path)) {
             error!("Solver has encountered a fatal error, details: {}", err)
         }
-        info!("Shutting down")
+        info!("Shutting down after {} seconds", start.elapsed().as_secs());
     } else {
         eprintln!("Usage: simple-sat <instance> <output>")
     }
