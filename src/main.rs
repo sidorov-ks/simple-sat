@@ -1,5 +1,3 @@
-mod solver;
-
 use std::fs;
 use std::fs::read_to_string;
 use std::path::Path;
@@ -7,6 +5,11 @@ use std::path::Path;
 use anyhow::{anyhow, bail, Context};
 use dimacs::Instance;
 use log::{error, info, warn};
+
+use crate::solver::engines::brute_force::BruteForceSolver;
+use crate::solver::SatSolver;
+
+mod solver;
 
 fn main() {
     let start = std::time::Instant::now();
@@ -30,6 +33,7 @@ fn init_logging() {
 const FILENAME_PLACEHOLDER: &str = "<unknown>";
 
 fn run(input_file: &Path, output_file: &Path) -> anyhow::Result<()> {
+    let mut solver = BruteForceSolver::new();
     let file_path = input_file.to_str().unwrap_or(FILENAME_PLACEHOLDER);
     let instance_text =
         read_to_string(input_file).context(format!("Failed to read the instance {}", file_path))?;
@@ -44,8 +48,8 @@ fn run(input_file: &Path, output_file: &Path) -> anyhow::Result<()> {
                 num_vars,
                 clauses.len()
             );
-            let solution = solver::solve_instance(num_vars, clauses.into_vec());
-            if let Err(_) = fs::write(output_file, format!("{}", solution)) {
+            let solution = solver.solve(num_vars, &clauses.into_vec());
+            if fs::write(output_file, format!("{}", solution)).is_err() {
                 warn!(
                     "Failed to write the solution into the file {}, writing to stdout",
                     output_file.to_str().unwrap_or(FILENAME_PLACEHOLDER)
