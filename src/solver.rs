@@ -1,5 +1,6 @@
 use crate::solver::data_model::Solution;
 
+pub mod cnf_ops;
 pub mod data_model;
 pub mod engines;
 
