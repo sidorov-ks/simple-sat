@@ -14,9 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: ebbflow-io/cargo-deb-amd64-ubuntu@1.0
     - name: Build
       run: cargo build --verbose --release
     - name: Build Deb package
-      cmd: cargo deb --target=x86_64-unknown-linux-musl
-    
+      uses: ebbflow-io/cargo-deb-amd64-ubuntu@1.0
