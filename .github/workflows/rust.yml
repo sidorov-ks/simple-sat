@@ -31,10 +31,11 @@ jobs:
       - name: Install cargo-get
         run: cargo install cargo-get
       - name: Retrieve version
+        id: version
         run: |
           echo "VERSION_NAME=$(cargo get version)" >> $GITHUB_OUTPUT
-        id: version
       - name: Create Release
+        id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
