@@ -11,8 +11,50 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  make-release:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION_NAME }}
+      upload_url: ${{ steps.upload_url.outputs.UPLOAD_URL }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+    - name: Install latest rust toolchain
+      uses: actions-rs/toolchain@master
+    - name: Install cargo-get
+      run: cargo install cargo-get
+    - name: Retrieve version
+      id: version
+      run: |
+        echo "VERSION_NAME=$(cargo get version)" >> $GITHUB_OUTPUT
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.version.outputs.VERSION_NAME }}
+        release_name: Release ${{ steps.version.outputs.VERSION_NAME }}
+        draft: false
+        prerelease: false
+    - name: Set upload URL
+      id: upload_url
+      run: echo "UPLOAD_URL=${{ steps.create_release.outputs.upload_url }}" >> $GITHUB_OUTPUT
+  build:
+    needs: make-release
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        asset-name:
+          - simple-sat_${{ steps.version.outputs.VERSION_NAME }}_amd64.deb
+          - simple-sat_${{ steps.version.outputs.VERSION_NAME }}_amd64.exe
+        asset-path:
+          - ./target/debian/simple-sat_${{ steps.version.outputs.VERSION_NAME }}_amd64.deb
+          - ./target/release/simple-sat.exe
+        asset-content-type:
+          - application/vnd.debian.binary-packages
+          - application/vnd.microsoft.portable-executable
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@master
@@ -25,32 +67,17 @@ jobs:
       - name: Build
         run: cargo build --all --release
       - name: Build Deb package
+        if: matrix.os == 'ubuntu-latest'
         run: |
           cargo install cargo-deb;
           cargo deb;
-      - name: Install cargo-get
-        run: cargo install cargo-get
-      - name: Retrieve version
-        id: version
-        run: |
-          echo "VERSION_NAME=$(cargo get version)" >> $GITHUB_OUTPUT
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.version.outputs.VERSION_NAME }}
-          release_name: Release ${{ steps.version.outputs.VERSION_NAME }}
-          draft: false
-          prerelease: false
       - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./target/debian/simple-sat_${{ steps.version.outputs.VERSION_NAME }}_amd64.deb
-          asset_name: simple-sat_${{ steps.version.outputs.VERSION_NAME }}_amd64.deb
-          asset_content_type: application/vnd.debian.binary-packages
+          upload_url: ${{ needs.make-release.outputs.upload_url }}
+          asset_path: ${{ matrix.asset-path }}
+          asset_name: ${{ matrix.asset-name }}
+          asset_content_type: ${{ matrix.asset-content-type }}
