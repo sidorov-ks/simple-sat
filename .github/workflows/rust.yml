@@ -25,11 +25,9 @@ jobs:
       - name: Build
         run: cargo build --all --release
       - name: Build Deb package
-        uses: ebbflow-io/cargo-deb-amd64-ubuntu@1.0
-        with:
-          cmd: |
-            cargo install cargo-deb;
-            cargo deb;
+        run: |
+          cargo install cargo-deb;
+          cargo deb;
       - name: Install cargo-get
         run: cargo install cargo-get
       - name: Retrieve version
