@@ -1,4 +1,5 @@
 use clap::Parser;
+use const_format::concatcp;
 use std::path::PathBuf;
 
 use crate::solver::engines::branching::trivial::TrivialBranching;
@@ -6,8 +7,27 @@ use crate::solver::engines::branching::vsids::VsidsBranching;
 use crate::solver::engines::cdcl::CdclSolver;
 use crate::{BruteForceSolver, SatSolver};
 
+pub static VERSION_STRING: &str = concatcp!(
+    "\n",
+    "\n",
+    "Build timestamp:\t",
+    env!("VERGEN_BUILD_TIMESTAMP"),
+    "\n",
+    "Build version:  \t",
+    env!("VERGEN_GIT_SEMVER"),
+    "\n",
+    "Commit SHA:     \t",
+    env!("VERGEN_GIT_SHA"),
+    "\n",
+    "Commit date:    \t",
+    env!("VERGEN_GIT_COMMIT_TIMESTAMP"),
+    "\n",
+    "Commit branch:  \t",
+    env!("VERGEN_GIT_BRANCH"),
+);
+
 #[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
+#[command(author, version = VERSION_STRING, about, long_about = None)]
 pub(crate) struct Args {
     #[arg(short)]
     pub(crate) input_file: PathBuf,
