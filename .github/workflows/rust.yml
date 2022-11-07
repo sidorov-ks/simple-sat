@@ -22,6 +22,8 @@ jobs:
           toolchain: stable
           default: true
           override: true
+      - name: Update rustup
+        run: rustup update
       - name: Build
         run: cargo build --all --release
       - name: Build Deb package
