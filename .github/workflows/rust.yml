@@ -23,11 +23,18 @@ jobs:
           default: true
           override: true
       - name: Update rustup
-        run: rustup update stable; rustup default stable; rustup target add x86_64-unknown-linux-musl; rustup show;
+        run:
       - name: Build
         run: cargo build --all --release
       - name: Build Deb package
         uses: ebbflow-io/cargo-deb-amd64-ubuntu@1.0
+        with:
+          cmd: |
+            rustup update stable;
+            rustup default stable;
+            rustup target add x86_64-unknown-linux-musl;
+            rustup show;
+            cargo deb --target=x86_64-unknown-linux-musl;
       - name: Install cargo-get
         run: cargo install cargo-get
       - name: Retrieve version
