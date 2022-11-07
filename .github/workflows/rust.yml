@@ -46,10 +46,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         asset-name:
-          - simple-sat_${{ steps.version.outputs.VERSION_NAME }}_amd64.deb
-          - simple-sat_${{ steps.version.outputs.VERSION_NAME }}_amd64.exe
+          - simple-sat_${{ needs.make-release.outputs.version }}_amd64.deb
+          - simple-sat_${{ needs.make-release.outputs.version }}_amd64.exe
         asset-path:
-          - ./target/debian/simple-sat_${{ steps.version.outputs.VERSION_NAME }}_amd64.deb
+          - ./target/debian/simple-sat_${{ needs.make-release.outputs.version }}_amd64.deb
           - ./target/release/simple-sat.exe
         asset-content-type:
           - application/vnd.debian.binary-packages
